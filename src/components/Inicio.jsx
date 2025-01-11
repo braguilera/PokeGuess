@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { cn } from "../lib/utils";
 import { DotPattern } from "./magicUI/DotPattern";
 import { HyperText } from './magicUI/HyperText';
@@ -13,24 +13,31 @@ import {useTranslation} from "react-i18next"
 
 const Proyectos = () => {
     const [pokemonJson, setPokemonJson] = useState()
+    const inputRef = useRef(null);
 
+    useEffect(() => {   
+        choosePokemon();
+    },[]);
+    
     const choosePokemon = () => {
-
         let randomId = Math.floor(Math.random() * (152 - 1) + 1 );
 
-        console.log(randomId);
-
         fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`)
-        .then(response =>  response.json())
+        .then(response => response.json())
         .then(pokemon => setPokemonJson(pokemon))
         .catch(error => {
             console.error('Error:', error)
         })
     };
 
-    useEffect(() => {   
-        choosePokemon();
-    },[]);
+    const comparator  = (e)  =>{
+        let respuesta = e.target.value;
+        if (pokemonJson.name === respuesta) {
+            choosePokemon(); 
+            inputRef.current.value = "";
+        }
+    
+    }
     
     return (
         <section className='flex flex-col items-center justify-center w-screen bg-red-400 h-screen'>
@@ -39,17 +46,12 @@ const Proyectos = () => {
                 <h2>Adivina el pokemon</h2>
             </header>
             <main>
-                <img src={pokemonJson.sprites.front_default}></img>
-                <p>{pokemonJson.name}</p>
-                
+                <img src={pokemonJson && pokemonJson.sprites.front_default}/>
+                <p>{pokemonJson && pokemonJson.name}</p>
             </main>
             <footer>
-                <article>
-                    <input/>
-                    
-                    <button onClick={() => (choosePokemon(), console.log(pokemonJson))}>Adivinar</button>
-                </article>
-                <button>Saltear</button>
+                <input ref={inputRef} onChange={comparator}/>
+                <button onClick={()=> (choosePokemon(), inputRef.current.value = "")}>Saltar</button>
             </footer>
             
         </section>
