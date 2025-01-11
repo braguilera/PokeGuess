@@ -12,7 +12,8 @@ import Contexto from '../contexto/Contexto';
 import {useTranslation} from "react-i18next"
 
 const Proyectos = () => {
-    const [pokemonJson, setPokemonJson] = useState()
+    const [pokemonJson, setPokemonJson] = useState();
+    const [isGuess, setIsGuess] = useState(false);
     const inputRef = useRef(null);
 
     useEffect(() => {   
@@ -33,8 +34,12 @@ const Proyectos = () => {
     const comparator  = (e)  =>{
         let respuesta = e.target.value;
         if (pokemonJson.name === respuesta) {
-            choosePokemon(); 
-            inputRef.current.value = "";
+            setIsGuess(true);
+            setTimeout(function(){
+                inputRef.current.value = "";
+                setIsGuess(false);
+                choosePokemon(); 
+            },1000);
         }
     
     }
@@ -45,8 +50,18 @@ const Proyectos = () => {
                 <h1>PokeGuess</h1>
                 <h2>Adivina el pokemon</h2>
             </header>
-            <main>
-                <img src={pokemonJson && pokemonJson.sprites.front_default}/>
+            <main className='flex flex-col relative'>
+                <img
+                    src={pokemonJson && pokemonJson.sprites.front_default}
+                    className={`absolute z-10 transition-all ${
+                        isGuess ? 'brightness-100' : 'brightness-0'
+                    }`}
+                    alt={pokemonJson?.name || "Pokemon"}
+                />
+                <img
+                    src={pokemonJson && pokemonJson.sprites.front_default}
+                    alt={pokemonJson?.name || "Pokemon"}
+                />
                 <p>{pokemonJson && pokemonJson.name}</p>
             </main>
             <footer>
