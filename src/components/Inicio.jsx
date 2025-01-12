@@ -8,20 +8,59 @@ const PokeGuess = () => {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [score, setScore] = useState(0);
     const [streak, setStreak] = useState(0);
+    const [showStats, setShowStats] = useState(false);
     const inputRef = useRef(null);
     const [showVictoryEffect, setShowVictoryEffect] = useState(false);
+    const [spanishName, setSpanishName] = useState("");
+
+    // Objeto con los colores por tipo de Pokémon
+    const typeColors = {
+        normal: "#A8A878",
+        fire: "#F08030",
+        water: "#6890F0",
+        electric: "#F8D030",
+        grass: "#78C850",
+        ice: "#98D8D8",
+        fighting: "#C03028",
+        poison: "#A040A0",
+        ground: "#E0C068",
+        flying: "#A890F0",
+        psychic: "#F85888",
+        bug: "#A8B820",
+        rock: "#B8A038",
+        ghost: "#705898",
+        dragon: "#7038F8",
+        dark: "#705848",
+        steel: "#B8B8D0",
+        fairy: "#EE99AC"
+    };
 
     useEffect(() => {
         choosePokemon();
     }, []);
 
+    const getSpanishName = async (id) => {
+        try {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
+            const data = await response.json();
+            const spanish = data.names.find(name => name.language.name === "es");
+            setSpanishName(spanish ? spanish.name : "");
+        } catch (error) {
+            console.error('Error fetching Spanish name:', error);
+        }
+    };
+
     const choosePokemon = () => {
         setIsTransitioning(true);
+        setIsGuess(false);
+        setShowStats(false);
+        setShowVictoryEffect(false);
         let randomId = Math.floor(Math.random() * (152 - 1) + 1);
         fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`)
             .then((response) => response.json())
             .then((pokemon) => {
                 setPokemonJson(pokemon);
+                getSpanishName(randomId);
                 setIsTransitioning(false);
             })
             .catch((error) => {
@@ -34,6 +73,7 @@ const PokeGuess = () => {
         if (pokemonJson.name === respuesta) {
             setIsGuess(true);
             setShowVictoryEffect(true);
+            setShowStats(true);
             setScore(prev => prev + 100);
             setStreak(prev => prev + 1);
         } else if (respuesta.trim() !== '') {
@@ -44,6 +84,11 @@ const PokeGuess = () => {
                 setIsError(false);
             }, 600);
         }
+    };
+
+    const handleNext = () => {
+        choosePokemon();
+        inputRef.current.value = "";
     };
 
     const handleSkip = () => {
@@ -59,9 +104,14 @@ const PokeGuess = () => {
         }
     };
 
-    // Función para renderizar el gráfico de estadísticas
+    const getPokemonTypeColor = () => {
+        if (!pokemonJson) return typeColors.normal;
+        const mainType = pokemonJson.types[0].type.name;
+        return typeColors[mainType] || typeColors.normal;
+    };
+
     const renderStatsGraph = () => {
-        if (!pokemonJson) return null;
+        if (!pokemonJson || !showStats) return null;
 
         const stats = {
             HP: pokemonJson.stats[0].base_stat,
@@ -80,7 +130,8 @@ const PokeGuess = () => {
                             <span className="text-sm font-medium w-24">{stat}</span>
                             <div className="flex-1 h-2 bg-gray-200 rounded">
                                 <motion.div
-                                    className="h-full bg-blue-500 rounded"
+                                    className="h-full rounded"
+                                    style={{ backgroundColor: getPokemonTypeColor() }}
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(value / 255) * 100}%` }}
                                     transition={{ duration: 1 }}
@@ -140,7 +191,8 @@ const PokeGuess = () => {
                         <motion.div 
                             className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-300"
                             style={{
-                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)'
+                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
+                                backgroundColor: isGuess ? getPokemonTypeColor() : '#e5e7eb'
                             }}
                             layout
                         >
@@ -235,29 +287,50 @@ const PokeGuess = () => {
                                     )}
                                     {isGuess && (
                                         <motion.div 
-                                            className="text-center text-green-600 font-bold"
+                                            className="text-center font-bold space-y-1"
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.3 }}
                                         >
-                                            ¡Correcto! Es {pokemonJson.name.toUpperCase()}
+                                            <div className="text-green-600">
+                                                ¡Correcto! Es {pokemonJson.name.toUpperCase()}
+                                            </div>
+                                            {spanishName && (
+                                                <div className="text-sm text-green-500">
+                                                    {spanishName}
+                                                </div>
+                                            )}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
                             </motion.div>
+
+                            {/* Botón Siguiente (solo visible cuando se ha adivinado) */}
+                            {isGuess && (
+                                <motion.button
+                                    onClick={handleNext}
+                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-bold"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    Siguiente Pokémon →
+                                </motion.button>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Panel derecho - Estadísticas (visible en pantallas grandes) */}
+                {/* Panel derecho - Estadísticas (visible en pantallas grandes y solo cuando se adivina) */}
                 <motion.div 
                     className="hidden lg:block bg-gray-800 rounded-2xl p-6 flex-1"
                     initial={{ x: 100, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                    {pokemonJson && (
+                    {pokemonJson && showStats && (
                         <div className="text-white">
                             <h2 className="text-2xl font-bold mb-4">Estadísticas del Pokémon</h2>
                             <div className="space-y-4">
@@ -271,15 +344,85 @@ const PokeGuess = () => {
                                         <p>{pokemonJson.height / 10} m</p>
                                     </div>
                                     <div>
-                                        <span className="text-gray-400">Peso:</span>
+                                    <span className="text-gray-400">Peso:</span>
                                         <p>{pokemonJson.weight / 10} kg</p>
                                     </div>
                                     <div>
                                         <span className="text-gray-400">Tipos:</span>
-                                        <p>{pokemonJson.types.map(t => t.type.name).join(', ')}</p>
+                                        <div className="flex gap-2">
+                                            {pokemonJson.types.map((t, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="px-2 py-1 rounded-full text-white text-sm"
+                                                    style={{ backgroundColor: typeColors[t.type.name] }}
+                                                >
+                                                    {t.type.name}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                                 {renderStatsGraph()}
+                                
+                                {/* Sección de habilidades */}
+                                <div className="mt-6">
+                                    <h3 className="text-xl font-bold mb-3">Habilidades</h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {pokemonJson.abilities.map((ability, index) => (
+                                            <div
+                                                key={index}
+                                                className="bg-gray-700 rounded-lg p-2 text-sm"
+                                            >
+                                                {ability.ability.name}
+                                                {ability.is_hidden && (
+                                                    <span className="text-xs text-gray-400 ml-2">(Oculta)</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Movimientos destacados */}
+                                <div className="mt-6">
+                                    <h3 className="text-xl font-bold mb-3">Movimientos Destacados</h3>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {pokemonJson.moves.slice(0, 4).map((move, index) => (
+                                            <div
+                                                key={index}
+                                                className="bg-gray-700 rounded-lg p-2 text-sm"
+                                            >
+                                                {move.move.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Sprites adicionales */}
+                                <div className="mt-6">
+                                    <h3 className="text-xl font-bold mb-3">Sprites</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {pokemonJson.sprites.back_default && (
+                                            <div className="bg-gray-700 rounded-lg p-2">
+                                                <img
+                                                    src={pokemonJson.sprites.back_default}
+                                                    alt="Back sprite"
+                                                    className="w-20 h-20 mx-auto"
+                                                />
+                                                <p className="text-center text-sm mt-2">Vista trasera</p>
+                                            </div>
+                                        )}
+                                        {pokemonJson.sprites.front_shiny && (
+                                            <div className="bg-gray-700 rounded-lg p-2">
+                                                <img
+                                                    src={pokemonJson.sprites.front_shiny}
+                                                    alt="Shiny sprite"
+                                                    className="w-20 h-20 mx-auto"
+                                                />
+                                                <p className="text-center text-sm mt-2">Shiny</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -288,5 +431,9 @@ const PokeGuess = () => {
         </motion.div>
     );
 };
+
+{/*
+solo necesito unas ultimas cosas, puedes hacer la animacion cuando adivina como antes, donde la pantalla donde esta el pokemon tenia un leve destello verde como dando la sensacion de que lo hizo bien y tambien cuando pasa de un pokemon a otro, en el proceso de la transicion del brillo de 100 a 0 se ve por un instante el sguiente pokemon con el brillo al 100 y pasa a 0, se podria arreglar eso
+*/}
 
 export default PokeGuess;
