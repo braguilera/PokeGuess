@@ -240,7 +240,8 @@ const PokeGuess = () => {
                         animate={{ y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h1 className="text-4xl font-bold text-white mb-4 text-shadow">PokéGuess</h1>
+                        <h1 className="text-4xl font-bold text-white text-shadow">PokéGuess</h1>
+                        <small className='text-red-300'>Primera generación</small>
                         <div className="flex justify-between px-4 text-white">
                             <span>Score: {score}</span>
                             <span>Streak: {streak}</span>
@@ -387,7 +388,7 @@ const PokeGuess = () => {
                 
             </div>
 
-            
+            <div className='hidden lg:block bg-gray-800 rounded-2xl w-0.5 h-full absolute top-0 left-1/2 z-20'></div>
 
             {/* Right Screen - Stats Display */}
             <motion.div 
