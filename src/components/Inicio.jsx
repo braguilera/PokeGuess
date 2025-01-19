@@ -79,6 +79,7 @@ const PokeGuess = () => {
         } else if (respuesta.trim() !== '') {
             setIsError(true);
             inputRef.current.value = "";
+            setStreak(0);
             
             setTimeout(() => {
                 setIsError(false);
@@ -147,257 +148,246 @@ const PokeGuess = () => {
 
     return (
         <motion.div 
-            className="min-h-screen bg-gradient-to-b from-red-400 to-red-600 p-8 flex items-center justify-center"
+            className="min-h-screen bg-gradient-to-b from-slate-600 to-slate-700 p-8 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
             <motion.div 
-                className="bg-red-500 rounded-3xl p-8 w-full max-w-6xl relative overflow-hidden shadow-2xl ring-8 ring-red-700 lg:flex lg:gap-8"
-                initial={{ y: 20 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-            >
-                {/* Panel izquierdo - Pokédex principal */}
-                <div className="flex-1">
-                    {/* Luces indicadoras de la Pokédex */}
-                    <div className="absolute top-4 left-4 flex gap-2">
-                        <motion.div 
-                            className="w-6 h-6 bg-blue-400 rounded-full border-4 border-white"
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                        />
-                        <div className="w-3 h-3 bg-red-300 rounded-full" />
-                        <div className="w-3 h-3 bg-yellow-300 rounded-full" />
-                        <div className="w-3 h-3 bg-green-300 rounded-full" />
-                    </div>
-
-                    {/* Contenido principal */}
-                    <div className="mt-8">
-                        <motion.div 
-                            className="text-center mb-6"
-                            initial={{ y: -20 }}
-                            animate={{ y: 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <h1 className="text-4xl font-bold text-white mb-4">PokéGuess</h1>
-                            <div className="flex justify-between px-4 text-white">
-                                <span>Score: {score}</span>
-                                <span>Streak: {streak}</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Pantalla de la Pokédex */}
-                        <motion.div 
-                            className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-300"
-                            style={{
-                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
-                                backgroundColor: isGuess ? getPokemonTypeColor() : '#e5e7eb'
-                            }}
-                            layout
-                        >
-                            <AnimatePresence>
-                                {showVictoryEffect && (
-                                    <motion.div 
-                                        className="absolute inset-0 bg-green-500"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 0.2 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.5 }}
-                                    />
-                                )}
-                                {isError && (
-                                    <motion.div 
-                                        className="absolute inset-0 bg-red-500"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 0.3 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                    />
-                                )}
-                            </AnimatePresence>
-
-                            {pokemonJson && (
-                                <motion.img
-                                    src={pokemonJson.sprites.front_default}
-                                    className="w-48 h-48 mx-auto"
-                                    initial={{ 
-                                        filter: "brightness(0%)",
-                                        scale: 0.9,
-                                        opacity: 0 
-                                    }}
-                                    animate={{ 
-                                        filter: isGuess ? "brightness(100%)" : "brightness(0%)",
-                                        scale: isGuess ? 1.1 : 1,
-                                        opacity: 1,
-                                        x: isError ? [-10, 10, -10, 10, 0] : 0
-                                    }}
-                                    transition={{ 
-                                        duration: isError ? 0.4 : 0.5,
-                                        bounce: 0.25,
-                                        x: { type: "spring", stiffness: 300 }
-                                    }}
-                                    alt="Pokemon"
-                                />
-                            )}
-                        </motion.div>
-
-                        {/* Controles de la Pokédex */}
-                        <div className="space-y-4 relative">
-                            <div className="flex gap-2">
-                                <input
-                                    ref={inputRef}
-                                    className="flex-1 px-4 py-2 rounded-lg border-4 border-gray-700 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    style={{
-                                        boxShadow: 'inset 0 0 5px rgba(0,0,0,0.2)'
-                                    }}
-                                    placeholder="¿Quién es este Pokémon?"
-                                    onKeyPress={handleKeyPress}
-                                    disabled={isGuess}
-                                />
-                                <motion.button
-                                    onClick={handleSkip}
-                                    className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    disabled={isGuess}
-                                >
-                                    ⏭️
-                                </motion.button>
-                            </div>
-                            
-                            {/* Pantalla de mensajes */}
-                            <motion.div 
-                                className="bg-gray-200 rounded-lg p-4 border-4 border-gray-700 min-h-[60px] flex items-center justify-center"
-                                style={{
-                                    boxShadow: 'inset 0 0 5px rgba(0,0,0,0.2)'
-                                }}
-                            >
-                                <AnimatePresence mode="wait">
-                                    {isError && (
-                                        <motion.div 
-                                            className="text-center text-red-600 font-bold"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            ¡Incorrecto! Intenta de nuevo
-                                        </motion.div>
-                                    )}
-                                    {isGuess && (
-                                        <motion.div 
-                                            className="text-center font-bold space-y-1"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <div className="text-green-600">
-                                                ¡Correcto! Es {pokemonJson.name.toUpperCase()}
-                                            </div>
-                                            {spanishName && (
-                                                <div className="text-sm text-green-500">
-                                                    {spanishName}
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </motion.div>
-
-                            {/* Botón Siguiente (solo visible cuando se ha adivinado) */}
-                            {isGuess && (
-                                <motion.button
-                                    onClick={handleNext}
-                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-bold"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    Siguiente Pokémon →
-                                </motion.button>
-                            )}
-                        </div>
-                    </div>
+            className="bg-red-600 rounded-3xl p-8 w-full max-w-6xl relative overflow-hidden shadow-2xl lg:flex lg:gap-8"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{
+                backgroundImage: 'linear-gradient(135deg, #ff0000 0%, #cc0000 100%)',
+                boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)'
+            }}
+        >
+            {/* Left Screen - Main Pokédex Display */}
+            <div className="flex-1 relative bg-red-700 rounded-2xl p-6 shadow-inner">
+                {/* Classic Pokédex Lights */}
+                <div className="absolute top-4 left-4 flex gap-2">
+                    <motion.div 
+                        className="w-8 h-8 bg-blue-400 rounded-full border-4 border-white"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        style={{ boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)' }}
+                    />
+                    <div className="w-4 h-4 bg-red-300 rounded-full shadow-inner" />
+                    <div className="w-4 h-4 bg-yellow-300 rounded-full shadow-inner" />
+                    <div className="w-4 h-4 bg-green-300 rounded-full shadow-inner" />
                 </div>
 
-                {/* Panel derecho - Estadísticas (visible en pantallas grandes y solo cuando se adivina) */}
-                <motion.div 
-                    className="hidden lg:block bg-gray-800 rounded-2xl p-6 flex-1"
-                    initial={{ x: 100, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                    {pokemonJson && showStats && (
-                        <div className="text-white">
-                            <h2 className="text-2xl font-bold mb-4">Estadísticas del Pokémon</h2>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <span className="text-gray-400">Número:</span>
-                                        <p>#{pokemonJson.id.toString().padStart(3, '0')}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400">Altura:</span>
-                                        <p>{pokemonJson.height / 10} m</p>
-                                    </div>
-                                    <div>
-                                    <span className="text-gray-400">Peso:</span>
-                                        <p>{pokemonJson.weight / 10} kg</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-400">Tipos:</span>
-                                        <div className="flex gap-2">
-                                            {pokemonJson.types.map((t, index) => (
-                                                <span
-                                                    key={index}
-                                                    className="px-2 py-1 rounded-full text-white text-sm"
-                                                    style={{ backgroundColor: typeColors[t.type.name] }}
-                                                >
-                                                    {t.type.name}
-                                                </span>
-                                            ))}
+                <div className="mt-12">
+                    <motion.div 
+                        className="text-center mb-6"
+                        initial={{ y: -20 }}
+                        animate={{ y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <h1 className="text-4xl font-bold text-white mb-4 text-shadow">PokéGuess</h1>
+                        <div className="flex justify-between px-4 text-white">
+                            <span>Score: {score}</span>
+                            <span>Streak: {streak}</span>
+                        </div>
+                    </motion.div>
+
+                    {/* Main Display Screen with Retro Effect */}
+                    <motion.div 
+                        className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-700"
+                        style={{
+                            boxShadow: 'inset 0 0 15px rgba(0,0,0,0.3)',
+                            background: isGuess 
+                                ? 'linear-gradient(135deg, #98FB98 0%, #90EE90 100%)'
+                                : 'linear-gradient(135deg, #d1d5db 0%, #e5e7eb 100%)',
+                            opacity: 1,
+                        }}
+                        layout
+                    >
+                        {/* Success Overlay */}
+                        <AnimatePresence>
+                            {isGuess && (
+                                <motion.div 
+                                    className="absolute inset-0 bg-green-500"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 0.1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            )}
+                        </AnimatePresence>
+
+                        {/* Error Overlay */}
+                        <AnimatePresence>
+                            {isError && (
+                                <motion.div 
+                                    className="absolute inset-0 bg-red-500"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 0.1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                />
+                            )}
+                        </AnimatePresence>
+
+                        {/* Pokemon Display Area with Enhanced Animation */}
+                        {pokemonJson && (
+                            <motion.img
+                                src={pokemonJson.sprites.front_default}
+                                className="w-48 h-48 mx-auto pixelated"
+                                style={{ imageRendering: 'pixelated' }}
+                                initial={{ 
+                                    filter: "brightness(0%)", 
+                                    scale: 0.9, 
+                                    opacity: 0 
+                                }}
+                                animate={{
+                                    filter: isGuess ? "brightness(100%)" : "brightness(0%)",
+                                    scale: isGuess ? 1.1 : 1,
+                                    opacity: 1,
+                                    x: isError ? [-10, 10, -10, 10, 0] : 0
+                                }}
+                                transition={{
+                                    duration: isError ? 0.4 : 0.5,
+                                    bounce: 0.25,
+                                    x: { 
+                                        type: "spring", 
+                                        stiffness: 300,
+                                        damping: 10
+                                    }
+                                }}
+                                alt="Pokemon"
+                            />
+                        )}
+                    </motion.div>
+                    <div className="space-y-4">
+                        <input
+                            ref={inputRef}
+                            className="w-full px-4 py-2 rounded-lg border-4 border-gray-700 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style={{
+                                boxShadow: 'inset 0 0 8px rgba(0,0,0,0.2)'
+                            }}
+                            placeholder="¿Quién es este Pokémon?"
+                            onKeyPress={handleKeyPress}
+                            disabled={isGuess}
+                        />
+
+                        <motion.div 
+                            className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 min-h-[60px] flex items-center justify-center mb-4"
+                            style={{
+                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
+                                background: isError 
+                                    ? 'linear-gradient(135deg, #ffcccc 0%, #ff9999 100%)'
+                                    : isGuess 
+                                        ? 'linear-gradient(135deg, #98FB98 0%, #90EE90 100%)'
+                                        : 'linear-gradient(135deg, #90EE90 0%, #98FB98 100%)',
+                            }}
+                        >
+                            <AnimatePresence mode="wait">
+                                {isError && (
+                                    <motion.div 
+                                        className="text-center text-red-800 font-bold"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        ¡Incorrecto! Intenta de nuevo
+                                    </motion.div>
+                                )}
+                                {isGuess && (
+                                    <motion.div 
+                                        className="text-center font-bold space-y-1"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <div className="text-green-800">
+                                            ¡Correcto! Es {pokemonJson.name.toUpperCase()}
                                         </div>
-                                    </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                        
+                        {isGuess ? (
+                            <motion.button
+                                onClick={handleNext}
+                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-bold"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                Siguiente Pokémon →
+                            </motion.button>
+                        ) : (
+                            <motion.button
+                                onClick={handleSkip}
+                                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                disabled={isGuess}
+                            >
+                                Saltar Pokémon →
+                            </motion.button>
+                        )}
+
+                        
+                    </div>
+                    
+                </div>
+                
+            </div>
+
+            
+
+            {/* Right Screen - Stats Display */}
+            <motion.div 
+                className="hidden lg:block bg-gray-800 rounded-2xl p-6 flex-1"
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                style={{
+                    background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
+                    boxShadow: 'inset 0 0 20px rgba(0,0,0,0.4)'
+                }}
+            >
+                {pokemonJson && showStats && (
+                    <div className="text-white">
+                        <h2 className="text-2xl font-bold mb-4">Estadísticas del Pokémon</h2>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-gray-700 p-3 rounded-lg">
+                                    <span className="text-gray-400">Número:</span>
+                                    <p>#{pokemonJson.id.toString().padStart(3, '0')}</p>
                                 </div>
-                                {renderStatsGraph()}
-                                
-                                {/* Sección de habilidades */}
-                                <div className="mt-6">
-                                    <h3 className="text-xl font-bold mb-3">Habilidades</h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {pokemonJson.abilities.map((ability, index) => (
-                                            <div
+                                <div className="bg-gray-700 p-3 rounded-lg">
+                                    <span className="text-gray-400">Altura:</span>
+                                    <p>{pokemonJson.height / 10} m</p>
+                                </div>
+                                <div className="bg-gray-700 p-3 rounded-lg">
+                                    <span className="text-gray-400">Peso:</span>
+                                    <p>{pokemonJson.weight / 10} kg</p>
+                                </div>
+                                <div className="bg-gray-700 p-3 rounded-lg">
+                                    <span className="text-gray-400">Tipos:</span>
+                                    <div className="flex gap-2 mt-1">
+                                        {pokemonJson.types.map((t, index) => (
+                                            <span
                                                 key={index}
-                                                className="bg-gray-700 rounded-lg p-2 text-sm"
+                                                className="px-2 py-1 rounded-full text-white text-sm"
+                                                style={{ backgroundColor: typeColors[t.type.name] }}
                                             >
-                                                {ability.ability.name}
-                                                {ability.is_hidden && (
-                                                    <span className="text-xs text-gray-400 ml-2">(Oculta)</span>
-                                                )}
-                                            </div>
+                                                {t.type.name}
+                                            </span>
                                         ))}
                                     </div>
                                 </div>
+                            </div>
+                            {renderStatsGraph()}
 
-                                {/* Movimientos destacados */}
-                                <div className="mt-6">
-                                    <h3 className="text-xl font-bold mb-3">Movimientos Destacados</h3>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {pokemonJson.moves.slice(0, 4).map((move, index) => (
-                                            <div
-                                                key={index}
-                                                className="bg-gray-700 rounded-lg p-2 text-sm"
-                                            >
-                                                {move.move.name}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Sprites adicionales */}
                                 <div className="mt-6">
                                     <h3 className="text-xl font-bold mb-3">Sprites</h3>
                                     <div className="grid grid-cols-2 gap-4">
@@ -423,17 +413,14 @@ const PokeGuess = () => {
                                         )}
                                     </div>
                                 </div>
-                            </div>
                         </div>
-                    )}
-                </motion.div>
+                    </div>
+                )}
             </motion.div>
+        </motion.div>
         </motion.div>
     );
 };
 
-{/*
-solo necesito unas ultimas cosas, puedes hacer la animacion cuando adivina como antes, donde la pantalla donde esta el pokemon tenia un leve destello verde como dando la sensacion de que lo hizo bien y tambien cuando pasa de un pokemon a otro, en el proceso de la transicion del brillo de 100 a 0 se ve por un instante el sguiente pokemon con el brillo al 100 y pasa a 0, se podria arreglar eso
-*/}
 
 export default PokeGuess;
