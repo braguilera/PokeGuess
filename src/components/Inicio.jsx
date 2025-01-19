@@ -37,6 +37,7 @@ const PokeGuess = () => {
 
     useEffect(() => {
         choosePokemon();
+        inputRef.current.focus();
     }, []);
 
     const getSpanishName = async (id) => {
@@ -50,33 +51,66 @@ const PokeGuess = () => {
         }
     };
 
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                e.preventDefault(); // Prevenimos el scroll de la página
+                if (isGuess) {
+                    handleNext();
+                } else {
+                    handleSkip();
+                }
+            }
+            if (e.key === 'Enter') {
+                comparator();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isGuess]); // Dependemos de isGuess para saber qué acción tomar
+
     const choosePokemon = () => {
         setIsTransitioning(true);
         setIsGuess(false);
         setShowStats(false);
         setShowVictoryEffect(false);
+        
+        // Reseteamos el Pokémon actual antes de cargar el nuevo
+        setPokemonJson(null);
+
         let randomId = Math.floor(Math.random() * (152 - 1) + 1);
         fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`)
             .then((response) => response.json())
             .then((pokemon) => {
-                setPokemonJson(pokemon);
-                getSpanishName(randomId);
-                setIsTransitioning(false);
+                // Pequeño delay para asegurar que la transición sea suave
+                setTimeout(() => {
+                    setPokemonJson(pokemon);
+                    getSpanishName(randomId);
+                    setIsTransitioning(false);
+                }, 100);
             })
             .catch((error) => {
                 console.error('Error:', error);
+                setIsTransitioning(false);
             });
     };
 
+
     const comparator = (respuesta) => {
-        respuesta = respuesta?.toLowerCase() || inputRef.current.value.toLowerCase();
-        if (pokemonJson.name === respuesta) {
+        if (!pokemonJson) return;
+        
+        const respuestaLimpia = respuesta?.trim().toLowerCase();
+        
+        if (!respuestaLimpia) return;
+    
+        if (pokemonJson.name === respuestaLimpia) {
             setIsGuess(true);
             setShowVictoryEffect(true);
             setShowStats(true);
             setScore(prev => prev + 100);
             setStreak(prev => prev + 1);
-        } else if (respuesta.trim() !== '') {
+        } else {
             setIsError(true);
             inputRef.current.value = "";
             setStreak(0);
@@ -90,20 +124,32 @@ const PokeGuess = () => {
     const handleNext = () => {
         choosePokemon();
         inputRef.current.value = "";
+        inputRef.current.focus(); // Mantener el foco
     };
-
+    
     const handleSkip = () => {
         setStreak(0);
-        setScore(prev => Math.max(0, prev - 50));
+        setScore((prev) => Math.max(0, prev - 50));
         choosePokemon();
         inputRef.current.value = "";
+        inputRef.current.focus(); // Mantener el foco
     };
-
-    const handleKeyPress = (e) => {
+    
+    const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
-            comparator();
+            e.preventDefault(); // Prevenir comportamiento por defecto
+            comparator(inputRef.current.value);
+            inputRef.current.focus(); // Mantener el foco
+        } else if (e.code === 'Space' && !e.repeat) {
+            e.preventDefault();
+            if (isGuess) {
+                handleNext();
+            } else {
+                handleSkip();
+            }
         }
     };
+    
 
     const getPokemonTypeColor = () => {
         if (!pokemonJson) return typeColors.normal;
@@ -148,11 +194,20 @@ const PokeGuess = () => {
 
     return (
         <motion.div 
-            className="min-h-screen bg-gradient-to-b from-slate-600 to-slate-700 p-8 flex items-center justify-center"
+            className="min-h-screen bg-gradient-to-b from-slate-600 to-slate-700 p-8 flex items-center justify-center flex-col"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
+        <section className="pb-4 text-white rounded shadow-md ">
+            <h2 className="text-xl font-bold mb-2 text-center">Cómo jugar</h2>
+            <ul>
+                <li className="text-sm mb-2">Escribe el nombre del Pokémon en el cuadro de texto y presiona <b>Enter</b> para adivinar.</li>
+                <li className="text-sm mb-2">Si no sabes quién es, presiona <b>Espacio</b> para saltar al siguiente Pokémon.</li>
+                <li className="text-sm">Cada acierto te da puntos. ¡Acumula una racha para obtener una puntuación más alta!</li>
+            </ul>
+        </section>
+
             <motion.div 
             className="bg-red-600 rounded-3xl p-8 w-full max-w-6xl relative overflow-hidden shadow-2xl lg:flex lg:gap-8"
             initial={{ y: 20 }}
@@ -194,86 +249,77 @@ const PokeGuess = () => {
 
                     {/* Main Display Screen with Retro Effect */}
                     <motion.div 
-                        className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-700"
+                        className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-700 h-64" // Añadimos altura fija
                         style={{
                             boxShadow: 'inset 0 0 15px rgba(0,0,0,0.3)',
                             background: isGuess 
                                 ? 'linear-gradient(135deg, #98FB98 0%, #90EE90 100%)'
                                 : 'linear-gradient(135deg, #d1d5db 0%, #e5e7eb 100%)',
-                            opacity: 1,
                         }}
-                        layout
                     >
-                        {/* Success Overlay */}
+                        {/* Transición Flash */}
                         <AnimatePresence>
-                            {isGuess && (
+                            {isTransitioning && (
                                 <motion.div 
-                                    className="absolute inset-0 bg-green-500"
+                                    className="absolute inset-0 bg-white"
                                     initial={{ opacity: 0 }}
-                                    animate={{ opacity: 0.1 }}
+                                    animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.5 }}
+                                    transition={{ duration: 0.2 }}
                                 />
                             )}
                         </AnimatePresence>
 
-                        {/* Error Overlay */}
-                        <AnimatePresence>
-                            {isError && (
-                                <motion.div 
-                                    className="absolute inset-0 bg-red-500"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 0.1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
+                        {/* Pokemon Display Area */}
+                        <div className="relative h-full flex items-center justify-center">
+                            {pokemonJson && (
+                                <motion.img
+                                    src={pokemonJson?.sprites.front_default}
+                                    className="w-48 h-48 pixelated"
+                                    style={{ 
+                                        imageRendering: 'pixelated',
+                                    }}
+                                    initial={{ 
+                                        filter: "brightness(0%)", 
+                                        scale: 0.9, 
+                                        opacity: 0 
+                                    }}
+                                    animate={{
+                                        filter: isGuess ? "brightness(100%)" : "brightness(0%)",
+                                        scale: isGuess ? 1.1 : 1,
+                                        opacity: 1,
+                                        x: isError ? [-10, 10, -10, 10, 0] : 0
+                                    }}
+                                    transition={{
+                                        duration: isError ? 0.4 : 0.3,
+                                        bounce: 0.25,
+                                        x: { 
+                                            type: "spring", 
+                                            stiffness: 300,
+                                            damping: 10
+                                        }
+                                    }}
+                                    alt="Pokemon"
                                 />
                             )}
-                        </AnimatePresence>
-
-                        {/* Pokemon Display Area with Enhanced Animation */}
-                        {pokemonJson && (
-                            <motion.img
-                                src={pokemonJson.sprites.front_default}
-                                className="w-48 h-48 mx-auto pixelated"
-                                style={{ imageRendering: 'pixelated' }}
-                                initial={{ 
-                                    filter: "brightness(0%)", 
-                                    scale: 0.9, 
-                                    opacity: 0 
-                                }}
-                                animate={{
-                                    filter: isGuess ? "brightness(100%)" : "brightness(0%)",
-                                    scale: isGuess ? 1.1 : 1,
-                                    opacity: 1,
-                                    x: isError ? [-10, 10, -10, 10, 0] : 0
-                                }}
-                                transition={{
-                                    duration: isError ? 0.4 : 0.5,
-                                    bounce: 0.25,
-                                    x: { 
-                                        type: "spring", 
-                                        stiffness: 300,
-                                        damping: 10
-                                    }
-                                }}
-                                alt="Pokemon"
-                            />
-                        )}
+                        </div>
                     </motion.div>
+
                     <div className="space-y-4">
                         <input
                             ref={inputRef}
+                            type='text'
                             className="w-full px-4 py-2 rounded-lg border-4 border-gray-700 bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             style={{
                                 boxShadow: 'inset 0 0 8px rgba(0,0,0,0.2)'
                             }}
                             placeholder="¿Quién es este Pokémon?"
-                            onKeyPress={handleKeyPress}
-                            disabled={isGuess}
+                            onKeyDown={handleKeyDown}
+                            disabled={!pokemonJson || isTransitioning}
                         />
 
                         <motion.div 
-                            className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 min-h-[60px] flex items-center justify-center mb-4"
+                            className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 h-[60px] flex items-center justify-center mb-4"
                             style={{
                                 boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
                                 background: isError 
@@ -297,7 +343,7 @@ const PokeGuess = () => {
                                 )}
                                 {isGuess && (
                                     <motion.div 
-                                        className="text-center font-bold space-y-1"
+                                        className="text-center font-bold space-y-1 "
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
