@@ -12,8 +12,9 @@ const PokeGuess = () => {
     const inputRef = useRef(null);
     const [showVictoryEffect, setShowVictoryEffect] = useState(false);
     const [spanishName, setSpanishName] = useState("");
+    const [suggestions, setSuggestions] = useState([]);
+    const [inputValue, setInputValue] = useState('');
 
-    // Objeto con los colores por tipo de Pokémon
     const typeColors = {
         normal: "#A8A878",
         fire: "#F08030",
@@ -40,6 +41,28 @@ const PokeGuess = () => {
         inputRef.current.focus();
     }, []);
 
+    const fetchPokemonSuggestions = async (input) => {
+        if (input.length < 1) {
+            setSuggestions([]);
+            return;
+        }
+
+        try {
+            const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
+            const data = await response.json();
+
+            const filteredPokemon = data.results
+                .filter(pokemon => 
+                    pokemon.name.toLowerCase().startsWith(input.toLowerCase())
+                )
+                .map(pokemon => pokemon.name);
+
+            setSuggestions(filteredPokemon);
+        } catch (error) {
+            console.error('Error fetching Pokemon suggestions:', error);
+        }
+    };
+
     const getSpanishName = async (id) => {
         try {
             const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
@@ -54,7 +77,7 @@ const PokeGuess = () => {
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.code === 'Space' && !e.repeat) {
-                e.preventDefault(); // Prevenimos el scroll de la página
+                e.preventDefault();
                 if (isGuess) {
                     handleNext();
                 } else {
@@ -68,22 +91,19 @@ const PokeGuess = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isGuess]); // Dependemos de isGuess para saber qué acción tomar
+    }, [isGuess]);
 
     const choosePokemon = () => {
         setIsTransitioning(true);
         setIsGuess(false);
         setShowStats(false);
         setShowVictoryEffect(false);
-        
-        // Reseteamos el Pokémon actual antes de cargar el nuevo
         setPokemonJson(null);
 
         let randomId = Math.floor(Math.random() * (152 - 1) + 1);
         fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`)
             .then((response) => response.json())
             .then((pokemon) => {
-                // Pequeño delay para asegurar que la transición sea suave
                 setTimeout(() => {
                     setPokemonJson(pokemon);
                     getSpanishName(randomId);
@@ -96,6 +116,18 @@ const PokeGuess = () => {
             });
     };
 
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setInputValue(value);
+        fetchPokemonSuggestions(value);
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        setInputValue(suggestion);
+        inputRef.current.value = suggestion;
+        setSuggestions([]);
+        comparator(suggestion);
+    };
 
     const comparator = (respuesta) => {
         if (!pokemonJson) return;
@@ -110,6 +142,7 @@ const PokeGuess = () => {
             setShowStats(true);
             setScore(prev => prev + 100);
             setStreak(prev => prev + 1);
+            inputRef.current.value = "";
         } else {
             setIsError(true);
             inputRef.current.value = "";
@@ -124,7 +157,8 @@ const PokeGuess = () => {
     const handleNext = () => {
         choosePokemon();
         inputRef.current.value = "";
-        inputRef.current.focus(); // Mantener el foco
+        setInputValue("");
+        inputRef.current.focus();
     };
     
     const handleSkip = () => {
@@ -132,19 +166,20 @@ const PokeGuess = () => {
         setScore((prev) => Math.max(0, prev - 50));
         choosePokemon();
         inputRef.current.value = "";
-        inputRef.current.focus(); // Mantener el foco
+        inputRef.current.focus();
     };
     
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault(); // Prevenir comportamiento por defecto
+            e.preventDefault(); 
             comparator(inputRef.current.value);
-            inputRef.current.focus(); // Mantener el foco
-        } else if (e.code === 'Space' && !e.repeat) {
-            e.preventDefault();
+            inputRef.current.focus();
             if (isGuess) {
                 handleNext();
-            } else {
+            }
+        } else if (e.code === 'Space' && !e.repeat) {
+            e.preventDefault();
+            if (!isGuess) {
                 handleSkip();
             }
         }
@@ -218,9 +253,9 @@ const PokeGuess = () => {
                 boxShadow: 'inset 0 0 20px rgba(0,0,0,0.3)'
             }}
         >
-            {/* Left Screen - Main Pokédex Display */}
+            {/* Pantalla Izquierda */}
             <div className="flex-1 relative bg-red-700 rounded-2xl p-6 shadow-inner">
-                {/* Classic Pokédex Lights */}
+                
                 <div className="absolute top-4 left-4 flex gap-2">
                     <motion.div 
                         className="w-8 h-8 bg-blue-400 rounded-full border-4 border-white"
@@ -248,9 +283,9 @@ const PokeGuess = () => {
                         </div>
                     </motion.div>
 
-                    {/* Main Display Screen with Retro Effect */}
+                    
                     <motion.div 
-                        className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-700 h-64" // Añadimos altura fija
+                        className="bg-gray-200 rounded-lg p-4 mb-6 relative border-8 border-gray-700 h-64" 
                         style={{
                             boxShadow: 'inset 0 0 15px rgba(0,0,0,0.3)',
                             background: isGuess 
@@ -258,7 +293,7 @@ const PokeGuess = () => {
                                 : 'linear-gradient(135deg, #d1d5db 0%, #e5e7eb 100%)',
                         }}
                     >
-                        {/* Transición Flash */}
+                        
                         <AnimatePresence>
                             {isTransitioning && (
                                 <motion.div 
@@ -271,7 +306,7 @@ const PokeGuess = () => {
                             )}
                         </AnimatePresence>
 
-                        {/* Pokemon Display Area */}
+                        
                         <div className="relative h-full flex items-center justify-center">
                             {pokemonJson && (
                                 <motion.img
@@ -315,9 +350,24 @@ const PokeGuess = () => {
                                 boxShadow: 'inset 0 0 8px rgba(0,0,0,0.2)'
                             }}
                             placeholder="¿Quién es este Pokémon?"
+                            onChange={handleInputChange}
+                            value={inputValue}
                             onKeyDown={handleKeyDown}
                             disabled={!pokemonJson || isTransitioning}
                         />
+                        {suggestions.length > 0 && (
+                            <ul className="absolute z-10 w-full max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+                                {suggestions.map((suggestion, index) => (
+                                    <li 
+                                        key={index}
+                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                        onClick={() => handleSuggestionClick(suggestion)}
+                                    >
+                                        {suggestion}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
 
                         <motion.div 
                             className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 h-[60px] flex items-center justify-center mb-4"
@@ -390,7 +440,7 @@ const PokeGuess = () => {
 
             <div className='hidden lg:block bg-gray-800 rounded-2xl w-0.5 h-full absolute top-0 left-1/2 z-20'></div>
 
-            {/* Right Screen - Stats Display */}
+            {/* Pantalla derecha */}
             <motion.div 
                 className="hidden lg:block bg-gray-800 rounded-2xl p-6 flex-1"
                 initial={{ x: 100, opacity: 0 }}
