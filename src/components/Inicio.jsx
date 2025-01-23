@@ -14,6 +14,7 @@ const PokeGuess = () => {
     const [spanishName, setSpanishName] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [isHelp, setIsHelp] = useState(true);
 
     const typeColors = {
         normal: "#A8A878",
@@ -229,19 +230,20 @@ const PokeGuess = () => {
 
     return (
         <motion.div 
-            className="min-h-screen bg-gradient-to-b from-slate-600 to-slate-700 p-8 flex items-center justify-center flex-col"
+            className="min-h-screen bg-gradient-to-b from-slate-600 to-slate-700 p-2 flex items-center justify-center flex-col box-border"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
-        <section className="pb-4 text-white rounded shadow-md ">
-            <h2 className="text-xl font-bold mb-2 text-center">Cómo jugar</h2>
-            <ul>
-                <li className="text-sm mb-2">Escribe el nombre del Pokémon en el cuadro de texto y presiona <b>Enter</b> para adivinar.</li>
-                <li className="text-sm mb-2">Si no sabes quién es, presiona <b>Espacio</b> para saltar al siguiente Pokémon.</li>
-                <li className="text-sm">Cada acierto te da puntos. ¡Acumula una racha para obtener una puntuación más alta!</li>
-            </ul>
-        </section>
+            <section className="pb-4 text-white rounded shadow-md ">
+                <h2 className="text-xl font-bold mb-2 text-center">Cómo jugar</h2>
+                <ul>
+                    <li className="text-sm mb-2">Escribe el nombre del Pokémon en el cuadro de texto y presiona <b>Enter</b> para adivinar.</li>
+                    <li className="text-sm mb-2">Si no sabes quién es, presiona <b>Espacio</b> para saltar al siguiente Pokémon.</li>
+                    <li className="text-sm mb-2">El botón <b>Sugerencias</b> activa o desactiva la ayuda de autocompletado de nombres de Pokémon.</li>
+                    <li className="text-sm">Cada acierto te da puntos. ¡Acumula una racha para obtener una puntuación más alta!</li>
+                </ul>
+            </section>
 
             <motion.div 
             className="bg-red-600 rounded-3xl p-8 w-full max-w-6xl relative overflow-hidden shadow-2xl lg:flex lg:gap-8"
@@ -256,7 +258,7 @@ const PokeGuess = () => {
             {/* Pantalla Izquierda */}
             <div className="flex-1 relative bg-red-700 rounded-2xl p-6 shadow-inner">
                 
-                <div className="absolute top-4 left-4 flex gap-2">
+                <div className="absolute top-4 left-4 flex gap-2 w-full">
                     <motion.div 
                         className="w-8 h-8 bg-blue-400 rounded-full border-4 border-white"
                         animate={{ scale: [1, 1.2, 1] }}
@@ -266,6 +268,36 @@ const PokeGuess = () => {
                     <div className="w-4 h-4 bg-red-300 rounded-full shadow-inner" />
                     <div className="w-4 h-4 bg-yellow-300 rounded-full shadow-inner" />
                     <div className="w-4 h-4 bg-green-300 rounded-full shadow-inner" />
+                    
+                    <div 
+                        className="flex cursor-pointer select-none absolute right-8 items-end"
+                        onClick={() => setIsHelp(!isHelp)}
+                    >
+                        <span className="ml-3 text-gray-300 self-center px-2">
+                            Sugerencias
+                        </span>
+                        <div className={`
+                            w-16 h-8 rounded-full p-1 flex items-center 
+                            ${isHelp ? 'bg-green-500' : 'bg-gray-300'}
+                            transition-colors duration-300 ease-in-out
+                        `}>
+                            <motion.div 
+                                className={`
+                                    w-6 h-6 bg-white rounded-full shadow-md 
+                                    transform transition-transform duration-200
+                                `}
+                                animate={{ 
+                                    x: isHelp ? 32 : 0 
+                                }}
+                                transition={{ 
+                                    type: "spring", 
+                                    stiffness: 300, 
+                                    damping: 20 
+                                }}
+                            />
+                        </div>
+                    </div>
+
                 </div>
 
                 <div className="mt-12">
@@ -341,7 +373,7 @@ const PokeGuess = () => {
                         </div>
                     </motion.div>
 
-                    <div className="space-y-4">
+                    <div className="relative">
                         <input
                             ref={inputRef}
                             type='text'
@@ -355,8 +387,9 @@ const PokeGuess = () => {
                             onKeyDown={handleKeyDown}
                             disabled={!pokemonJson || isTransitioning}
                         />
-                        {suggestions.length > 0 && (
-                            <ul className="absolute z-10 w-full max-h-60 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
+
+                        {(suggestions.length > 0 && isHelp ) && (
+                            <ul className="absolute z-10  w-full max-h-40 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-lg">
                                 {suggestions.map((suggestion, index) => (
                                     <li 
                                         key={index}
