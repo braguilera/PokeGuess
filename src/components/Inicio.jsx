@@ -258,7 +258,7 @@ const PokeGuess = () => {
             {/* Pantalla Izquierda */}
             <div className="flex-1 relative bg-red-700 rounded-2xl p-6 shadow-inner">
                 
-                <div className="absolute top-4 left-4 flex gap-2 w-full">
+                <div className="absolute top-4 left-4 flex flexco gap-2 w-full">
                     <motion.div 
                         className="w-8 h-8 bg-blue-400 rounded-full border-4 border-white"
                         animate={{ scale: [1, 1.2, 1] }}
@@ -273,7 +273,7 @@ const PokeGuess = () => {
                         className="flex cursor-pointer select-none absolute right-8 items-end"
                         onClick={() => setIsHelp(!isHelp)}
                     >
-                        <span className="ml-3 text-gray-300 self-center px-2">
+                        <span className="ml-3 text-gray-300 self-center px-2 hidden sm:inline-block">
                             Sugerencias
                         </span>
                         <div className={`
