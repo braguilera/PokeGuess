@@ -403,7 +403,7 @@ const PokeGuess = () => {
                         )}
 
                         <motion.div 
-                            className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 h-[60px] flex items-center justify-center mb-4"
+                            className="bg-[#90EE90] rounded-lg p-4 border-4 border-gray-700 h-[60px] flex items-center justify-center mb-4 mt-4"
                             style={{
                                 boxShadow: 'inset 0 0 10px rgba(0,0,0,0.2)',
                                 background: isError 
